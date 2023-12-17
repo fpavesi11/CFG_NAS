@@ -1,0 +1,9 @@
+test_files/
+deprecated/
+experimental_files/
+data/
+data/cifar-10-batches-py/
+data/cifar-10-python.tar.gz
+data/Iris.csv
+env/
+**/__pycache__
