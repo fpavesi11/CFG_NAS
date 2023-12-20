@@ -1,5 +1,4 @@
 from torch.utils.data import DataLoader, TensorDataset
-from deprecated.Version_1.Translator import TranslatedNetwork
 from tqdm import tqdm
 import torch
 
@@ -15,18 +14,23 @@ class AutoTrainer:
         self.lr = lr
         self.batch_size = batch_size
 
-    def train(self, model):
-        self.network = TranslatedNetwork(model)
+    def train(self, model, device=None):
+        optimizer = self.optimizer(model.parameters(), lr=self.lr)
 
-        optimizer = self.optimizer(self.network.parameters(), lr=self.lr)
+        model.train()
 
         # TRAINING
         for epoch in tqdm(range(self.num_epochs)):
             num_obs = 0
             avg_train_loss = 0
             for batch_x, batch_y in self.train_loader:
+
+                if device is not None:
+                    batch_x.to(device)
+                    batch_y.to(device)
+
                 num_obs += len(batch_y)
-                outputs = self.network(batch_x)
+                outputs = model(batch_x)
                 loss = self.criterion(outputs, batch_y)
                 avg_train_loss += loss.item()
 
@@ -37,7 +41,7 @@ class AutoTrainer:
             avg_train_loss = avg_train_loss/num_obs
 
         # EVALUATION
-        self.network.eval()
+        model.eval()
         with torch.no_grad():
             correct_predictions = 0
             num_obs = 0
@@ -45,7 +49,7 @@ class AutoTrainer:
 
             for batch_x, batch_y in self.test_loader:
                 # Forward pass
-                outputs = self.network(batch_x)
+                outputs = model(batch_x)
 
                 # Calculate loss
                 loss = self.criterion(outputs, batch_y)
@@ -75,9 +79,7 @@ class AutoTrainerV2:
         self.batch_size = batch_size
 
     def train(self, model):
-        self.network = TranslatedNetwork(model)
-
-        optimizer = self.optimizer(self.network.parameters(), lr=self.lr)
+        optimizer = self.optimizer(model.parameters(), lr=self.lr)
 
         # TRAINING
         for epoch in tqdm(range(self.num_epochs)):
@@ -85,7 +87,7 @@ class AutoTrainerV2:
             avg_train_loss = 0
             for batch_x, batch_y in self.train_loader:
                 num_obs += len(batch_y)
-                outputs = self.network(batch_x)
+                outputs = model(batch_x)
                 loss = self.criterion(outputs, batch_y)
                 avg_train_loss += loss.item()
 
@@ -96,7 +98,7 @@ class AutoTrainerV2:
             avg_train_loss = avg_train_loss/num_obs
 
         # EVALUATION
-        self.network.eval()
+        model.eval()
         with torch.no_grad():
             correct_predictions = 0
             num_obs = 0
@@ -104,7 +106,7 @@ class AutoTrainerV2:
 
             for batch_x, batch_y in self.test_loader:
                 # Forward pass
-                outputs = self.network(batch_x)
+                outputs = model(batch_x)
 
                 # Calculate loss
                 loss = self.criterion(outputs, batch_y)
