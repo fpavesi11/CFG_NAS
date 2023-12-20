@@ -17,6 +17,7 @@ class AutoTrainer:
     def train(self, model, device=None):
         optimizer = self.optimizer(model.parameters(), lr=self.lr)
 
+        model.to(device)
         model.train()
 
         # TRAINING
@@ -26,8 +27,8 @@ class AutoTrainer:
             for batch_x, batch_y in self.train_loader:
 
                 if device is not None:
-                    batch_x.to(device)
-                    batch_y.to(device)
+                    batch_x = batch_x.to(device)
+                    batch_y = batch_y.to(device)
 
                 num_obs += len(batch_y)
                 outputs = model(batch_x)
@@ -48,6 +49,11 @@ class AutoTrainer:
             avg_test_loss = 0
 
             for batch_x, batch_y in self.test_loader:
+
+                if device is not None:
+                    batch_x = batch_x.to(device)
+                    batch_y = batch_y.to(device)
+
                 # Forward pass
                 outputs = model(batch_x)
 
