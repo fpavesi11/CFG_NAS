@@ -84,14 +84,21 @@ class AutoTrainerV2:
         self.lr = lr
         self.batch_size = batch_size
 
-    def train(self, model):
+    def train(self, model, device=None):
+
         optimizer = self.optimizer(model.parameters(), lr=self.lr)
 
         # TRAINING
+        model.to(device)
+        model.train()
         for epoch in tqdm(range(self.num_epochs)):
             num_obs = 0
             avg_train_loss = 0
             for batch_x, batch_y in self.train_loader:
+                if device is not None:
+                    batch_x = batch_x.to(device)
+                    batch_y = batch_y.to(device)
+
                 num_obs += len(batch_y)
                 outputs = model(batch_x)
                 loss = self.criterion(outputs, batch_y)
@@ -111,6 +118,9 @@ class AutoTrainerV2:
             avg_test_loss = 0
 
             for batch_x, batch_y in self.test_loader:
+                if device is not None:
+                    batch_x = batch_x.to(device)
+                    batch_y = batch_y.to(device)
                 # Forward pass
                 outputs = model(batch_x)
 
