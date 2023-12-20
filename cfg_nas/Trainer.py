@@ -76,8 +76,12 @@ class AutoTrainer:
 
 class AutoTrainerV2:
     def __init__(self, train_dataset, test_dataset, criterion, optimizer, num_epochs, lr=0.01, batch_size=32):
-        self.train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size)
-        self.test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size)
+        self.train_loader=train_dataset
+        if not isinstance(train_dataset, DataLoader):
+            self.train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size)
+        self.test_loader=test_dataset
+        if not isinstance(test_dataset, DataLoader):
+            self.test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size)
         self.criterion = criterion
         self.optimizer = optimizer
         self.num_epochs = num_epochs
