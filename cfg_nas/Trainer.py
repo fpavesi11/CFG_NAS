@@ -3,7 +3,11 @@ from tqdm import tqdm
 import torch
 
 class AutoTrainer:
-    def __init__(self, train_data, train_labels, test_data, test_labels, criterion, optimizer, num_epochs, lr=0.01, batch_size=32):
+    def __init__(self, train_data, train_labels, test_data, test_labels, criterion, optimizer, num_epochs, lr=0.01, batch_size=32, task='binary_classification'):
+
+        assert task in ('binary_classification', 'multi_label_classification', 'regression'), 'Unrecognized ' + str(task) + ', available tasks are: binary_classification,  multi_label_classification, regression'
+
+        self.task=task
         self.train_dataset = TensorDataset(train_data, train_labels)
         self.train_loader = DataLoader(dataset=self.train_dataset, batch_size=batch_size)
         self.test_dataset = TensorDataset(test_data, test_labels)
@@ -14,7 +18,9 @@ class AutoTrainer:
         self.lr = lr
         self.batch_size = batch_size
 
+
     def train(self, model, device=None):
+
         optimizer = self.optimizer(model.parameters(), lr=self.lr)
 
         model.to(device)
@@ -30,12 +36,13 @@ class AutoTrainer:
                     batch_x = batch_x.to(device)
                     batch_y = batch_y.to(device)
 
+                optimizer.zero_grad()
+
                 num_obs += len(batch_y)
                 outputs = model(batch_x)
                 loss = self.criterion(outputs, batch_y)
                 avg_train_loss += loss.item()
 
-                optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
 
@@ -62,7 +69,12 @@ class AutoTrainer:
                 avg_test_loss += loss.item()
 
                 # Calculate accuracy
-                predicted = torch.round(outputs)
+                if self.task == 'binary_classification':
+                    predicted = torch.round(outputs)
+                elif self.task == 'multi_label_classification':
+                    predicted = torch.argmax(outputs,dim=-1)
+                else:
+                    predicted = outputs
                 correct_predictions += (predicted == batch_y).sum().item()
                 num_obs += batch_y.size(0)
 
@@ -75,7 +87,13 @@ class AutoTrainer:
 
 
 class AutoTrainerV2:
-    def __init__(self, train_dataset, test_dataset, criterion, optimizer, num_epochs, lr=0.01, batch_size=32):
+    def __init__(self, train_dataset, test_dataset, criterion, optimizer, num_epochs, lr=0.01, batch_size=32, task='binary_classification'):
+        assert task in ('binary_classification', 'multi_label_classification', 'regression'), 'Unrecognized ' + str(
+            task) + ', available tasks are: ' \
+                    'binary_classification, ' \
+                    'multi_label_classification, ' \
+                    'regression.'
+        self.task = task
         self.train_loader=train_dataset
         if not isinstance(train_dataset, DataLoader):
             self.train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size)
@@ -103,12 +121,13 @@ class AutoTrainerV2:
                     batch_x = batch_x.to(device)
                     batch_y = batch_y.to(device)
 
+                optimizer.zero_grad()
+
                 num_obs += len(batch_y)
                 outputs = model(batch_x)
                 loss = self.criterion(outputs, batch_y)
                 avg_train_loss += loss.item()
 
-                optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
 
@@ -133,7 +152,12 @@ class AutoTrainerV2:
                 avg_test_loss += loss.item()
 
                 # Calculate accuracy
-                predicted = torch.round(outputs)
+                if self.task == 'binary_classification':
+                    predicted = torch.round(outputs)
+                elif self.task == 'multi_label_classification':
+                    predicted = torch.argmax(outputs, dim=-1)
+                else:
+                    predicted = outputs
                 correct_predictions += (predicted == batch_y).sum().item()
                 num_obs += batch_y.size(0)
 
